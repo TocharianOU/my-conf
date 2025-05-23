@@ -132,7 +132,6 @@ curl -X POST "http://elasticsearch:9200/_scripts/address_places_search" -H 'Cont
       "sort": [
         "_score"
       ],
-      "_source": ["names.name*", "address_parts.name.name*", "address_parts.rank"],
       "size": "{{size}}"
     }
   }
@@ -215,11 +214,6 @@ curl -X POST "http://elasticsearch:9200/_scripts/universal_name_address_search" 
       },
       "sort": [
         "_score"
-      ],
-      "_source": [
-        "names.name*",
-        "address_parts.name.name*",
-        "address_parts.rank"
       ],
       "size": "{{size}}"
     }
