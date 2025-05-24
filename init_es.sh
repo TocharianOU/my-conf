@@ -100,40 +100,7 @@ curl -X POST "http://elasticsearch:9200/_scripts/address_places_search" -H 'Cont
 {
   "script": {
     "lang": "mustache",
-    "source": {
-      "query": {
-        "nested": {
-          "path": "address_parts",
-          "query": {
-            "function_score": {
-              "query": {
-                "match": {
-                  "address_parts.name.name:my": {
-                    "query": "{{keyword}}"
-                  }
-                }
-              },
-              "functions": [
-                {
-                  "script_score": {
-                    "script": {
-                      "source": "Math.pow(2, doc['address_parts.rank'].value / 5)"
-                    }
-                  }
-                }
-              ],
-              "boost_mode": "multiply"
-            }
-          },
-          "score_mode": "avg",
-          "inner_hits": { "size": 3 }
-        }
-      },
-      "sort": [
-        "_score"
-      ],
-      "size": "{{size}}"
-    }
+    "source": "{\"query\":{\"nested\":{\"path\":\"address_parts\",\"query\":{\"function_score\":{\"query\":{\"match\":{\"address_parts.name.name:my\":{\"query\":\"{{keyword}}\"}}},\"functions\":[{\"script_score\":{\"script\":{\"source\":\"Math.pow(2, doc[\\\"address_parts.rank\\\"].value / 5)\"}}}],\"boost_mode\":\"multiply\"}},\"score_mode\":\"avg\",\"inner_hits\":{\"size\":3}}},\"sort\":[\"_score\"],\"size\":\"{{size}}\"}"
   }
 }
 '
@@ -145,18 +112,7 @@ curl -X POST "http://elasticsearch:9200/_scripts/name_search" -H 'Content-Type: 
 {
   "script": {
     "lang": "mustache",
-    "source": {
-      "query": {
-        "multi_match": {
-          "fields": [
-            "names.name:my.ngram",
-            "names.name.ngram"
-          ],
-          "query": "{{keyword}}"
-        }
-      },
-      "size": "{{size}}"
-    }
+    "source": "{\"query\":{\"multi_match\":{\"fields\":[\"names.name:my.ngram\",\"names.name.ngram\"],\"query\":\"{{keyword}}\"}},\"size\":\"{{size}}\"}"
   }
 }
 '
@@ -168,55 +124,7 @@ curl -X POST "http://elasticsearch:9200/_scripts/universal_name_address_search" 
 {
   "script": {
     "lang": "mustache",
-    "source": {
-      "query": {
-        "bool": {
-          "should": [
-            {
-              "multi_match": {
-                "fields": [
-                  "names.name:my.ngram",
-                  "names.name.ngram"
-                ],
-                "query": "{{keyword}}"
-              }
-            },
-            {
-              "nested": {
-                "path": "address_parts",
-                "query": {
-                  "function_score": {
-                    "query": {
-                      "match": {
-                        "address_parts.name.name:my": {
-                          "query": "{{keyword}}"
-                        }
-                      }
-                    },
-                    "functions": [
-                      {
-                        "script_score": {
-                          "script": {
-                            "source": "Math.pow(2, doc['address_parts.rank'].value / 5)"
-                          }
-                        }
-                      }
-                    ],
-                    "boost_mode": "multiply"
-                  }
-                },
-                "score_mode": "avg",
-                "inner_hits": { "size": 3 }
-              }
-            }
-          ]
-        }
-      },
-      "sort": [
-        "_score"
-      ],
-      "size": "{{size}}"
-    }
+    "source": "{\"query\":{\"bool\":{\"should\":[{\"multi_match\":{\"fields\":[\"names.name:my.ngram\",\"names.name.ngram\"],\"query\":\"{{keyword}}\"}},{\"nested\":{\"path\":\"address_parts\",\"query\":{\"function_score\":{\"query\":{\"match\":{\"address_parts.name.name:my\":{\"query\":\"{{keyword}}\"}}},\"functions\":[{\"script_score\":{\"script\":{\"source\":\"Math.pow(2, doc[\\\"address_parts.rank\\\"].value / 5)\"}}}],\"boost_mode\":\"multiply\"}},\"score_mode\":\"avg\",\"inner_hits\":{\"size\":3}}}]},\"sort\":[\"_score\"],\"size\":\"{{size}}\"}"
   }
 }
 '
