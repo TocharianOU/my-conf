@@ -100,101 +100,29 @@ curl -X PUT "http://elasticsearch:9200/address_places" \
   -d "$INDEX_CONFIG"
 echo ""
 
-# 3. 定义模板 source 变量（用单引号包裹，避免转义）
-ADDRESS_PLACES_SEARCH_SOURCE='{
-  "query": {
-    "nested": {
-      "path": "address_parts",
-      "query": {
-        "function_score": {
-          "query": {
-            "match": {
-              "address_parts.name.name:my": {
-                "query": "{{keyword}}"
-              }
-            }
-          },
-          "functions": [
-            {
-              "script_score": {
-                "script": {
-                  "source": "Math.pow(2, doc[\\\"address_parts.rank\\\"].value / 5)"
-                }
-              }
-            }
-          ],
-          "boost_mode": "multiply"
-        }
-      },
-      "score_mode": "avg",
-      "inner_hits": { "size": 3 }
-    }
-  },
-  "sort": ["_score"],
-  "size": "{{size}}"
+# 3. 定义模板内容（source 必须是字符串！）
+ADDRESS_PLACES_SEARCH_TMPL='{
+  "script": {
+    "lang": "mustache",
+    "source": "{\"query\":{\"nested\":{\"path\":\"address_parts\",\"query\":{\"function_score\":{\"query\":{\"match\":{\"address_parts.name.name:my\":{\"query\":\"{{keyword}}\"}}},\"functions\":[{\"script_score\":{\"script\":{\"source\":\"Math.pow(2, doc['address_parts.rank'].value / 5)\"}}}],\"boost_mode\":\"multiply\"}},\"score_mode\":\"avg\",\"inner_hits\":{\"size\":3}}},\"sort\":[\"_score\"],\"size\":\"{{size}}\"}"
+  }
 }'
 
-NAME_SEARCH_SOURCE='{
-  "query": {
-    "multi_match": {
-      "fields": ["names.name:my.ngram", "names.name.ngram"],
-      "query": "{{keyword}}"
-    }
-  },
-  "size": "{{size}}"
+NAME_SEARCH_TMPL='{
+  "script": {
+    "lang": "mustache",
+    "source": "{\"query\":{\"multi_match\":{\"fields\":[\"names.name:my.ngram\",\"names.name.ngram\"],\"query\":\"{{keyword}}\"}},\"size\":\"{{size}}\"}"
+  }
 }'
 
-UNIVERSAL_NAME_ADDRESS_SEARCH_SOURCE='{
-  "query": {
-    "bool": {
-      "should": [
-        {
-          "multi_match": {
-            "fields": ["names.name:my.ngram", "names.name.ngram"],
-            "query": "{{keyword}}"
-          }
-        },
-        {
-          "nested": {
-            "path": "address_parts",
-            "query": {
-              "function_score": {
-                "query": {
-                  "match": {
-                    "address_parts.name.name:my": {
-                      "query": "{{keyword}}"
-                    }
-                  }
-                },
-                "functions": [
-                  {
-                    "script_score": {
-                      "script": {
-                        "source": "Math.pow(2, doc['address_parts.rank'].value / 5)"
-                      }
-                    }
-                  }
-                ],
-                "boost_mode": "multiply"
-              }
-            },
-            "score_mode": "avg",
-            "inner_hits": { "size": 3 }
-          }
-        }
-      ]
-    }
-  },
-  "sort": ["_score"],
-  "size": "{{size}}"
+UNIVERSAL_NAME_ADDRESS_SEARCH_TMPL='{
+  "script": {
+    "lang": "mustache",
+    "source": "{\"query\":{\"bool\":{\"should\":[{\"multi_match\":{\"fields\":[\"names.name:my.ngram\",\"names.name.ngram\"],\"query\":\"{{keyword}}\"}},{\"nested\":{\"path\":\"address_parts\",\"query\":{\"function_score\":{\"query\":{\"match\":{\"address_parts.name.name:my\":{\"query\":\"{{keyword}}\"}}},\"functions\":[{\"script_score\":{\"script\":{\"source\":\"Math.pow(2, doc['address_parts.rank'].value / 5)\"}}}],\"boost_mode\":\"multiply\"}},\"score_mode\":\"avg\",\"inner_hits\":{\"size\":3}}}]},\"sort\":[\"_score\"],\"size\":\"{{size}}\"}"
+  }
 }'
 
-# 4. 组合模板 JSON
-ADDRESS_PLACES_SEARCH_TMPL=$(jq -cn --arg src "$ADDRESS_PLACES_SEARCH_SOURCE" '{script: {lang: "mustache", source: $src}}')
-NAME_SEARCH_TMPL=$(jq -cn --arg src "$NAME_SEARCH_SOURCE" '{script: {lang: "mustache", source: $src}}')
-UNIVERSAL_NAME_ADDRESS_SEARCH_TMPL=$(jq -cn --argjson src "$UNIVERSAL_NAME_ADDRESS_SEARCH_SOURCE" '{script: {lang: "mustache", source: $src}}')
-
-# 5. 创建/更新模板
+# 4. 创建/更新模板
 echo "Creating/Updating _scripts/address_places_search..."
 curl -X POST "http://elasticsearch:9200/_scripts/address_places_search" \
   -H 'Content-Type: application/json' \
