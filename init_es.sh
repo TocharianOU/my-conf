@@ -170,7 +170,7 @@ UNIVERSAL_NAME_ADDRESS_SEARCH_SOURCE='{
                   {
                     "script_score": {
                       "script": {
-                        "source": "Math.pow(2, doc[\\\"address_parts.rank\\\"].value / 5)"
+                        "source": "Math.pow(2, doc['address_parts.rank'].value / 5)"
                       }
                     }
                   }
@@ -192,7 +192,7 @@ UNIVERSAL_NAME_ADDRESS_SEARCH_SOURCE='{
 # 4. 组合模板 JSON
 ADDRESS_PLACES_SEARCH_TMPL=$(jq -cn --arg src "$ADDRESS_PLACES_SEARCH_SOURCE" '{script: {lang: "mustache", source: $src}}')
 NAME_SEARCH_TMPL=$(jq -cn --arg src "$NAME_SEARCH_SOURCE" '{script: {lang: "mustache", source: $src}}')
-UNIVERSAL_NAME_ADDRESS_SEARCH_TMPL=$(jq -cn --arg src "$UNIVERSAL_NAME_ADDRESS_SEARCH_SOURCE" '{script: {lang: "mustache", source: $src}}')
+UNIVERSAL_NAME_ADDRESS_SEARCH_TMPL=$(jq -cn --argjson src "$UNIVERSAL_NAME_ADDRESS_SEARCH_SOURCE" '{script: {lang: "mustache", source: $src}}')
 
 # 5. 创建/更新模板
 echo "Creating/Updating _scripts/address_places_search..."
