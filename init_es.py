@@ -38,6 +38,16 @@ def wait_for_elasticsearch(url="http://elasticsearch:9200", timeout=300):
 
 def create_index(es_url="http://elasticsearch:9200"):
     """创建索引配置"""
+    
+    # 首先检查索引是否已存在
+    try:
+        response = requests.head(f"{es_url}/address_places")
+        if response.status_code == 200:
+            print("Index 'address_places' already exists, skipping creation")
+            return True
+    except requests.exceptions.RequestException:
+        pass
+    
     index_config = {
         "settings": {
             "index.max_ngram_diff": 99,
@@ -128,6 +138,8 @@ def create_index(es_url="http://elasticsearch:9200"):
     
     if response.status_code in [200, 201]:
         print("Index created/updated successfully")
+    elif response.status_code == 400 and "already exists" in response.text:
+        print("Index already exists, skipping creation")
     else:
         print(f"Error creating index: {response.status_code} - {response.text}")
         return False
